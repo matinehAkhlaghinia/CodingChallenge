@@ -1,0 +1,202 @@
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+void get_dimensions_of_grid(int& length, int& width);
+void initialize_grid(int**& grid,int length,int width);
+void get_init_position(int& x, int& y, char& orientation);
+void get_instructions(string& instruction);
+void find_the_final_position(string instruction,int& x, int& y, char& orientation, int length, int width, int**& grid);
+
+int main() 
+{	
+	int length, width, x, y;
+	char orientation;
+	int** grid;
+	string instruction;
+	
+	get_dimensions_of_grid(length, width);
+	initialize_grid(grid, length, width);
+	while(true)
+	{
+		get_init_position(x, y, orientation);
+		get_instructions(instruction);
+		find_the_final_position(instruction,x, y, orientation, length, width, grid);
+	}
+	
+	free(grid);
+	return 0;
+}
+
+void get_dimensions_of_grid(int& length, int& width)
+{
+	cin >> length >> width;									
+}
+void get_init_position(int& x, int& y, char& orientation)
+{
+	cin >> x >> y >> orientation;
+}
+void get_instructions(string& instruction)
+{
+	cin >> instruction;
+}
+//For flaging the edges which robots fall out from them, I used a 2D array because the access complexity
+//is O(1) so it answers pretty fast. I could have used a 1D array to simply store each position that a robot
+//falls out and go through that array each time which would have increased the complexity.
+//Although I would have saved the memory consumption in that way.
+
+void initialize_grid(int**& grid,int length,int width)  
+{
+	grid = new int*[width + 1];
+	for(int i = 0; i < width + 1; ++i)
+    	grid[i] = new int[length + 1];
+}
+
+void rotate_right(char& orientation)
+{
+	if(orientation == 'N')
+		orientation = 'E';
+	else if(orientation == 'E')
+		orientation = 'S';
+	else if(orientation == 'S')
+		orientation = 'W';
+	else if(orientation == 'W')
+		orientation = 'N';
+}
+void rotate_left(char& orientation)
+{
+	if(orientation == 'N')
+		orientation = 'W';
+	else if(orientation == 'W')
+		orientation = 'S';
+	else if(orientation == 'S')
+		orientation = 'E';
+	else if(orientation == 'E')
+		orientation = 'N';
+}
+void flag_the_edge(int x, int y, int**& grid)			//If a robot falls of an edge, this function puts a flag in that position
+{	
+	grid[y][x] = 1;								
+}
+bool lost_before(int x, int y, int**& grid)				//This function checks whether any robot has been fell out of a specific position.														
+{
+	if(grid[y][x] == 1)
+		return true;
+	else
+		{
+			flag_the_edge(x, y, grid);			
+			return false;
+		}
+		
+}
+
+bool move_forward_successful(int& x, int& y, char& orientation, int length, int width, int**& grid)
+{	
+	switch(orientation)
+	{
+	
+		case 'N':
+		{
+			int prev_y = y++;
+			if(y > width)
+				{	
+					y = prev_y;
+					if(lost_before(x, prev_y, grid))
+						return true;
+					else
+						return false;
+				}
+			else
+				return true;
+			break;
+		}
+		case 'E':
+		{
+			int prev_x = x++;
+			if(x > length)
+				{	
+					x = prev_x;
+					if(lost_before(prev_x, y, grid))
+						return true;
+					else
+						return false;
+				}
+			else
+				return true;
+			break;
+		}
+		case 'W':
+		{
+			int prev_x = x--;
+			if(x < 0)
+				{	
+					x = prev_x;
+					if(lost_before(prev_x, y, grid))
+						return true;
+					else
+						return false;
+				}
+			else
+				return true;
+			break;
+		}
+		case 'S':
+		{
+			int prev_y = y--;
+			if(y < 0)
+				{	
+					y = prev_y;
+					if(lost_before(x, prev_y, grid))
+						return true;
+					else
+						return false;
+				}
+			else
+				return true;
+			break;
+		}
+	}
+
+	return true;
+}
+void print_final_position(int x, int y, char orientation, bool robot_lost)
+{	
+	if(robot_lost)
+		cout << x << " " << y << " " << orientation << " " << "LOST" << endl;
+	else
+		cout << x << " " << y << " " << orientation << endl;
+}
+
+void find_the_final_position(string instruction,int& x, int& y, char& orientation, int length, int width, int**& grid)
+{	
+	int index = 0;
+	bool robot_lost = 0;
+	while(instruction[index] != '\0')
+	{
+		if(instruction[index] == 'F')
+		{
+			if(move_forward_successful(x, y, orientation, length, width, grid))
+				{	
+					index++;
+					continue;
+				}
+			else
+			{
+				robot_lost = 1;
+				break;
+
+			}
+		}
+		else if(instruction[index] == 'R')
+			rotate_right(orientation);
+		else if(instruction[index] == 'L')
+			rotate_left(orientation);				//For additional commands you can add as many else if statements as you need,
+													//and define a function for it.
+		index++;
+
+	}
+
+	print_final_position(x, y, orientation, robot_lost);
+}
+
